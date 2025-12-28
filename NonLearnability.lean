@@ -1,4 +1,4 @@
-/-
+/-!
 ===============================================================================
 NonLearnability.lean
 ===============================================================================
@@ -10,7 +10,7 @@ Purpose:
   Fully verified negative results for finite learning substrates.
   Establishes the precise cost of coherence, learning-like behavior,
   and modular composition. All major theorems are complete.
--/
+-/ 
 
 import Mathlib
 
@@ -223,10 +223,8 @@ by
   rintro ⟨C, hC_attr, hC_union, hC_min⟩
   have h_card_ge_3 : C.toFinset.card ≥ 3 :=
     by
-      have : (0 : Fin 4) ∈ CycleA := by simp [CycleA]
-      have : (2 : Fin 4) ∈ CycleB := by simp [CycleB]
-      have : 0 ∈ C ∧ 2 ∈ C := by simpa [hC_union]
-      have : (0 : Fin 4) ≠ 2 := by decide
+      have : 0 ∈ C ∧ 2 ∈ C := by
+        simp [hC_union, CycleA, CycleB]
       apply Finset.card_ge_of_subset
       simp only [Finset.subset_iff, Finset.mem_insert, Finset.mem_singleton]
       rintro i (rfl | rfl) <;> simp [*]
@@ -261,11 +259,6 @@ by
   rintro ⟨x1, x2⟩ ⟨hx1, hx2⟩
   exact ⟨hA1 hx1, hA2 hx2⟩
 
-/- Future direction:
-   Non-trivial coupling required for joint algorithmic behavior inevitably
-   destroys at least one original minimal attractor unless nonlinearity budget increases.
--/
-
 -------------------------------------------------------------------------------
 -- 7. Learning is not universal
 -------------------------------------------------------------------------------
@@ -295,4 +288,4 @@ Interpretation summary:
 These fully verified theorems carve the exact frontier:
 below it, dynamics are structurally impoverished;
 above it, emergent algorithmic possibility becomes viable—but rare and costly.
--/
+-/ 
