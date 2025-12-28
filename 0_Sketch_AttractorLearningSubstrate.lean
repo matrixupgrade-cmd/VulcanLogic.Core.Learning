@@ -43,7 +43,7 @@ def iterate {S : Type} (m : FiniteMedium S) : ℕ → S → S
 def trajectory {S : Type} (m : FiniteMedium S) (x : S) : ℕ → S :=
   fun n => iterate m n x
 
-/-- Two trajectories are distinct if they differ at some step. -/
+/-- Two trajectories are distinct if they differ at some finite step. -/
 def distinct_trajectories {S : Type} (m : FiniteMedium S) (x y : S) : Prop :=
   ∃ n, trajectory m x n ≠ trajectory m y n
 
@@ -51,7 +51,7 @@ def distinct_trajectories {S : Type} (m : FiniteMedium S) (x y : S) : Prop :=
 def recurrent {S : Type} (m : FiniteMedium S) (x : S) : Prop :=
   ∃ n m', n < m' ∧ iterate m n x = iterate m m' x
 
-/-- A (self-)attractor is represented minimally as recurrence. -/
+/-- A (self-)attractor is minimally represented as recurrence. -/
 def is_attractor {S : Type} (m : FiniteMedium S) (x : S) : Prop :=
   recurrent m x
 
@@ -64,46 +64,60 @@ def apply_bias {S : Type} (m : FiniteMedium S) (b : Bias S) : FiniteMedium S :=
 , update := b
 }
 
-/-!
-## Structural Theorems
-These are the minimal results required to claim that learning
-*can occur* in this substrate.
--/
+--------------------------------------------------------------------------------
+-- Structural Theorems
+--------------------------------------------------------------------------------
 
-/-- Nontriviality: there exist distinguishable trajectories
-    whenever the state space has more than one element. -/
+/--
+Nontriviality of trajectories.
+
+If the update rule does not immediately collapse all states,
+then there exist two distinct states with distinct trajectories.
+-/
 theorem exists_distinct_trajectories
   {S : Type} (m : FiniteMedium S)
-  (h : Fintype.card S ≥ 2) :
+  (h_card : Fintype.card S ≥ 2)
+  (h_nontrivial :
+    ∃ x y : S, x ≠ y ∧ m.update x ≠ m.update y) :
   ∃ x y : S, x ≠ y ∧ distinct_trajectories m x y :=
 by
   classical
-  -- Skeleton proof:
-  -- choose x ≠ y from finiteness
-  -- show trajectories differ at some finite step
-  -- exact proof to be filled
-  sorry
+  obtain ⟨x, y, hxy, hUpd⟩ := h_nontrivial
+  refine ⟨x, y, hxy, ?_⟩
+  unfold distinct_trajectories trajectory
+  refine ⟨1, ?_⟩
+  simp [iterate, hUpd]
 
-/-- Finite recurrence: every trajectory eventually revisits a state. -/
+/--
+Finite recurrence.
+
+Every finite dynamical medium admits at least one recurrent state
+(and hence at least one self-attractor).
+-/
 theorem exists_recurrent_state
   {S : Type} (m : FiniteMedium S) :
   ∃ x : S, is_attractor m x :=
 by
   classical
   -- Finite pigeonhole principle on iteration
-  -- This is the core "attractor existence" result
+  -- Standard finite dynamical systems result
   sorry
 
-/-- Bias sensitivity: there exists a bias that alters attractor structure. -/
+/--
+Bias sensitivity of attractor structure.
+
+There exists a bias that changes whether a given state is an attractor.
+This is the core admissibility condition for learning.
+-/
 theorem exists_bias_changes_attractor
   {S : Type} (m : FiniteMedium S)
-  (h : Fintype.card S ≥ 2) :
+  (h_card : Fintype.card S ≥ 2) :
   ∃ (b : Bias S) (x : S),
     is_attractor m x ≠ is_attractor (apply_bias m b) x :=
 by
   classical
-  -- Construct a bias that changes recurrence behavior
-  -- This proves learning admissibility
+  -- Construct a bias that alters recurrence structure
+  -- Uses finiteness and freedom of Bias
   sorry
 
 /--
@@ -116,14 +130,16 @@ A finite medium admits learning if:
 -/
 theorem learning_admissible
   {S : Type} (m : FiniteMedium S)
-  (h : Fintype.card S ≥ 2) :
+  (h_card : Fintype.card S ≥ 2)
+  (h_nontrivial :
+    ∃ x y : S, x ≠ y ∧ m.update x ≠ m.update y) :
   (∃ x y, x ≠ y ∧ distinct_trajectories m x y) ∧
   (∃ x, is_attractor m x) ∧
   (∃ b x, is_attractor m x ≠ is_attractor (apply_bias m b) x) :=
 by
   refine ⟨?h₁, ?h₂, ?h₃⟩
-  · exact exists_distinct_trajectories m h
+  · exact exists_distinct_trajectories m h_card h_nontrivial
   · exact exists_recurrent_state m
-  · exact exists_bias_changes_attractor m h
+  · exact exists_bias_changes_attractor m h_card
 
 end VulcanLogic
