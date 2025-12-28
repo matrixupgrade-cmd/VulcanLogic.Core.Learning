@@ -8,3 +8,5 @@ AttractorLearningSubstrate.lean
 Starts with the median which learning can occur and shows that learning is a phase of finite dynamics, not an algorithm.
 
 EmergentAlgorithmicTrajectory.lean Helps clear up where algorithm behavior can occurs in finite complex systems.
+
+NonLearnability.lean  file about what is not a learning system, what structures can't learn.
