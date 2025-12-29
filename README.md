@@ -7,12 +7,14 @@ note: requires Vulcan Logic Core depository  github.com/matrixupgrade-cmd/vulcan
 AttractorLearningSubstrate.lean
 Starts with the median which learning can occur and shows that learning is a phase of finite dynamics, not an algorithm.
 
-EmergentAlgorithmicTrajectory.lean Helps clear up where algorithm behavior can occurs in finite complex systems.
+EmergentAlgorithmicTrajectory.lean
+Helps clear up where algorithm behavior can occurs in finite complex systems.
 
-NonLearnability.lean  file about what is not a learning system, what structures can't learn.
+NonLearnability.lean 
+file about what is not a learning system, what structures can't learn.
 
 AttractorEcology.lean
-
+a mathematically complete account of how bounded dynamical systems spontaneously organize into finite fractal attractor ecologies.
 
 
 ### Master File List
