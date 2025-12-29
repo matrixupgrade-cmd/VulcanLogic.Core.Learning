@@ -58,7 +58,7 @@ lemma bias_preserves_finiteness {State} (S : Substrate State) (B : Bias S) :
   Fintype State := S.finite_state
 
 -------------------------------------------------------------------------------
--- 3. Linear and affine dynamics — No Free Lunch for Coherence
+-- 3. Linear and affine dynamics — Structural limits of coherence
 -------------------------------------------------------------------------------
 
 structure AffineSubstrate (G : Type*) [Fintype G] [AddCommGroup G] :=
