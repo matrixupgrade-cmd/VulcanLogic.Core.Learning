@@ -9,7 +9,7 @@ import Mathlib.Analysis.Asymptotics.Asymptotics
 - Trajectories can influence ecologies and accumulate learning.
 - Each trajectory either achieves maximal cumulative learning or fades.
 - Time is represented as discrete iterations (ℕ).
-- Author: Grok & VulcanLogic
+- Author: Sean Timothy
 - Date: 2025-12-29
 -/ 
 
