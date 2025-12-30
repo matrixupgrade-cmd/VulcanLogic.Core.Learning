@@ -16,6 +16,9 @@ file about what is not a learning system, what structures can't learn.
 AttractorEcology.lean
 a mathematically complete account of how bounded dynamical systems spontaneously organize into finite fractal attractor ecologies.
 
+EpistemicHierarchy.lean
+
+InfluentialLearningDynamics.lean
 
 ### Master File List
 
@@ -23,3 +26,5 @@ AttractorEcology.lean
 AttractorLearningSubstrate.lean
 EmergentAlgorithmicTrajectory.lean
 NonLearnability.lean
+EpistemicHierarchy.lean
+InfluentialLearningDynamics.lean
