@@ -20,6 +20,8 @@ EpistemicHierarchy.lean
 
 InfluentialLearningDynamics.lean
 
+Compacity_CumulativeLearning.lean
+
 ### Master File List
 
 AttractorEcology.lean
@@ -28,3 +30,4 @@ EmergentAlgorithmicTrajectory.lean
 NonLearnability.lean
 EpistemicHierarchy.lean
 InfluentialLearningDynamics.lean
+Compacity_CumulativeLearning.lean
