@@ -1,6 +1,6 @@
 /-!
 ===============================================================================
-VulcanLogic.Learning.MasterProof.Verified.lean
+_SurakStability.lean
 ===============================================================================
 Purpose:
   Complete, fully verified master file for the Surak stability framework:
