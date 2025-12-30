@@ -1,6 +1,6 @@
 /-!
 # Compacity + Cumulative Learning with Dynamic Amplification and Simulation — Lean 4 Master
-Author: Sean Timothy + Grok
+Author: Sean Timothy + Grok + ChatGPT
 Date: 2025-12-30
 
 ## Overview
