@@ -1,6 +1,6 @@
 /-!
 ===============================================================================
-_SurakStability.lean
+SurakStability.lean
 ===============================================================================
 Purpose:
   Complete, fully verified master file for the Surak stability framework:
