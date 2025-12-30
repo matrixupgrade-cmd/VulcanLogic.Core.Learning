@@ -22,6 +22,8 @@ InfluentialLearningDynamics.lean
 
 Compacity_CumulativeLearning.lean
 
+SurakStability.lean
+
 ### Master File List
 
 AttractorEcology.lean
@@ -29,5 +31,6 @@ AttractorLearningSubstrate.lean
 EmergentAlgorithmicTrajectory.lean
 NonLearnability.lean
 EpistemicHierarchy.lean
+SurakStability.lean
 InfluentialLearningDynamics.lean
 Compacity_CumulativeLearning.lean
