@@ -20,6 +20,7 @@ with **dynamic signal amplification** and **simulation of reinforcement dynamics
 - Fully formal, proof chain complete (no `sorry`s).
 - Capstone: merges Lean formalism with nested self-attractor intuition.
 
+Fixed: Symmetry computation now uses an explicit, configurable `symmetry_horizon` instead of a hidden magic number.
 -/
 
 import Mathlib.Data.Real.Basic
@@ -44,6 +45,13 @@ axiom decay_nonneg : ∀ t, 0 ≤ decay t
 axiom decay_tendsto_zero : Tendsto decay atTop (nhds 0)
 
 -- ======================================================
+-- Symmetry horizon (explicit parameter — no more magic numbers)
+-- ======================================================
+
+variable (symmetry_horizon : ℕ)
+axiom symmetry_horizon_pos : 0 < symmetry_horizon
+
+-- ======================================================
 -- Attractors and stabilization
 -- ======================================================
 
@@ -61,7 +69,7 @@ def Stabilizes (τ : Trajectory) : Prop := ∃ A : Attractor, Basin A τ
 -- ======================================================
 
 def Symmetry (τ : Trajectory) (A : Attractor) : ℝ :=
-  (∑ t in Finset.range 100, if τ t ∈ A.carrier then 1 else 0 : ℝ) / 100
+  (∑ t in Finset.range symmetry_horizon, if τ t ∈ A.carrier then 1 else 0 : ℝ) / symmetry_horizon.toReal
 
 variable (absorb_threshold : ℝ)
 axiom absorb_threshold_pos : 0 < absorb_threshold ∧ absorb_threshold ≤ 1
@@ -199,7 +207,7 @@ def TotalEcologyLearning (E : I → LearningSubstrateDyn) (steps : ℕ) : ℝ :=
 
 /-!
 - Trajectories stabilize in attractors → captured by MemoryKnots.
-- Absorption/rejection based on symmetry encodes selective inclusion.
+- Absorption/rejection based on explicit symmetry over a configurable horizon.
 - Dynamic amplification (`α_dyn`) models reinforcement over time.
 - Simulation functions (`StepSubstrate`, `StepEcology`, `IterateEcology`) show cumulative dynamics.
 - GloballyCompare = equivalence relation on absorbed trajectories.
