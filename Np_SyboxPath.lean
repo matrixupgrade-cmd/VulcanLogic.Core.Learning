@@ -5,7 +5,7 @@ Finite Epistemic Hierarchies with Self-Nesting Amplification (Axiom-Free)
 ===============================================================================
 
 Author: Sean Timothy
-Date: 2025-12-29
+Date: 2025-12-31
 
 This file provides a complete, finite, axiom-free formalization of:
 
