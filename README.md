@@ -24,6 +24,8 @@ Compacity_CumulativeLearning.lean
 
 SurakStability.lean
 
+SyboxPath.lean
+
 ### Master File List
 
 AttractorEcology.lean
@@ -34,3 +36,4 @@ EpistemicHierarchy.lean
 SurakStability.lean
 InfluentialLearningDynamics.lean
 Compacity_CumulativeLearning.lean
+SyboxPath.lean
