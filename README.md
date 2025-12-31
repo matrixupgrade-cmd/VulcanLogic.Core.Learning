@@ -23,8 +23,11 @@ InfluentialLearningDynamics.lean
 Compacity_CumulativeLearning.lean
 
 SurakStability.lean
+"The path is suppression of imbalance. Stability is single-basin convergence. Multiplicity is strictly transient under reinforcement."
 
 SyboxPath.lean
+"The path is reflection. Return is emergence. Survival is self-containment without optimization."
+
 
 ### Master File List
 
