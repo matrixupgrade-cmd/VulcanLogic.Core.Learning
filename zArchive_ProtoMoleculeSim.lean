@@ -1,6 +1,6 @@
 /-!
 # Proto-Molecule Ecology Simulation
-Author: VulcanLogic Architect
+Author: Sean Timothy
 Date: 2026-01-01
 
 Multiple proto-molecules explore a vector-based environment.
