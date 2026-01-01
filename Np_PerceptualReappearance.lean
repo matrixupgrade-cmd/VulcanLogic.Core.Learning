@@ -1,9 +1,9 @@
 /-!
 ===============================================================================
-PerceptualReappearanceOracleFull.lean
+PerceptualReappearance.lean
 ===============================================================================
 
-Author: Sean Timothy & VulcanLogic Architect
+Author: Sean Timothy
 Date: 2026-01-01
 
 Purpose:
