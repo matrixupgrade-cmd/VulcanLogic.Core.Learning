@@ -28,7 +28,7 @@ SurakStability.lean
 SyboxPath.lean
 "The path is reflection. Return is emergence. Survival is self-containment without optimization."
 
-CalculatingWisdom.lean
+ProtoMolecule.lean
 
 ### Master File List
 
@@ -41,4 +41,4 @@ SurakStability.lean
 InfluentialLearningDynamics.lean
 Compacity_CumulativeLearning.lean
 SyboxPath.lean
-CalculatingWisdom.lean
+ProtoMolecule.lean
