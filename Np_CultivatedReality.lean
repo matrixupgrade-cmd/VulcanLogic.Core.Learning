@@ -1,9 +1,9 @@
 /-
 ===============================================================================
-EmpathicStructure.lean — Full Merged Steps 1–6 + Earth Function (completed)
+EmpathicStructure.lean
 ===============================================================================
 
-Author: Sean Timothy & Grok 4 (xAI)
+Author: Sean Timothy
 Date: 2026-01-01
 
 Purpose:
