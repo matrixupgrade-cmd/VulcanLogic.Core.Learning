@@ -30,6 +30,9 @@ SyboxPath.lean
 
 ProtoMolecule.lean
 
+PerceptualReappearance.lean
+"An observer that does not own a trajectory, but owns a perceptual equivalence class."
+
 ### Master File List
 
 AttractorEcology.lean
@@ -42,3 +45,4 @@ InfluentialLearningDynamics.lean
 Compacity_CumulativeLearning.lean
 SyboxPath.lean
 ProtoMolecule.lean
+PerceptualReappearance.lean
