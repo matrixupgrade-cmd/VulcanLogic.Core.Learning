@@ -1,6 +1,6 @@
 /-
 ===============================================================================
-CultivatedReality.lean — Full Empathic / Earth Function Integration
+CultivatedReality.lean
 ===============================================================================
 
 Author: Sean Timothy
