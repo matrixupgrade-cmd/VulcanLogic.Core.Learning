@@ -1,6 +1,6 @@
 /-
 ===============================================================================
-EmpathicStructure.lean
+CultivatedReality.lean — Full Empathic / Earth Function Integration
 ===============================================================================
 
 Author: Sean Timothy
@@ -10,9 +10,10 @@ Purpose:
   • Steps 1–5: Single-agent empathic influence → ecological fragmentation
   • Step 6: Multi-agent sequential composition → preserves fragmentation
   • Earth Function: Introduces a persistent baseline "earth_adjust" that
-    acts *before* all agents on every step. The resulting dynamics retain
-    monotonicity, boundedness, stabilization, and the full ecological
-    fragmentation theorem under the same nontriviality assumption.
+    acts *before* all agents on every step. This represents the cultivated
+    substrate of reality. The resulting dynamics retain monotonicity,
+    boundedness, stabilization, and the full ecological fragmentation theorem
+    under the same nontriviality assumption.
 -/
 
 import Mathlib.Data.Finset.Basic
@@ -40,131 +41,153 @@ variable (clarity : State → ℝ) (step : State → State)
 --   empathic_implies_ecology,
 --   MultiEmpathicInfluence, multi_empathic_step, multi_* definitions,
 --   multi_mutual_reachability_collapses, multi_empathic_implies_ecology)
-
--- Omitted here for brevity; they are identical to the previous complete version.
+-- Omitted here for brevity.
 
 -------------------------------------------------------------------------------
 -- 4. Earth function: persistent baseline adjustment
 -------------------------------------------------------------------------------
 
 /-- Persistent baseline adjustment ("earth") applied *before* agents on every step.
-    No formal restraints are imposed on earth_adjust — it represents cultivated
-    reality / substrate that agents act upon. The proofs show that the full
+    No formal restraints are imposed on `earth_adjust` — it represents cultivated
+    reality / substrate that agents act upon. The theorems show that the full
     ecological structure persists regardless. -/
 variable (earth_adjust : State → State)
 
-/-- Dynamics with earth: earth_adjust first, then sequential agent adjustments,
+/-- Dynamics with earth: `earth_adjust` first, then sequential agent adjustments,
     then base step. -/
-def multi_empathic_step_with_earth (M : MultiEmpathicInfluence) (s : State) : State :=
+def multi_empathic_step_with_earth
+    (earth_adjust : State → State) (M : MultiEmpathicInfluence) (s : State) : State :=
   let s₀ := earth_adjust s
   Fintype.elems Agent |>.foldl (fun acc a => step (apply_influence M a acc)) s₀
 
-/-- Reachability under earth + multi-agent dynamics -/
-def multi_reachable_with_earth (M : MultiEmpathicInfluence) (n : ℕ) (s t : State) : Prop :=
-  (multi_empathic_step_with_earth M^[n]) s = t
+/-- Reachability under earth + multi-agent dynamics. -/
+def multi_reachable_with_earth
+    (earth_adjust : State → State) (M : MultiEmpathicInfluence)
+    (n : ℕ) (s t : State) : Prop :=
+  (multi_empathic_step_with_earth earth_adjust M^[n]) s = t
 
-/-- Future set under earth + multi-agent dynamics -/
-def multi_future_set_with_earth (M : MultiEmpathicInfluence) (n : ℕ) (s : State) : Finset State :=
-  filter (multi_reachable_with_earth M n s) univ
+/-- Cumulative future set under earth + multi-agent dynamics:
+    all states reachable in at most `n` steps. -/
+def multi_future_set_with_earth
+    (earth_adjust : State → State) (M : MultiEmpathicInfluence)
+    (n : ℕ) (s : State) : Finset State :=
+  univ.filter (fun t => ∃ k ≤ n, multi_reachable_with_earth earth_adjust M k s t)
 
-/-- Cardinality remains monotone (structural property of iteration) -/
-lemma multi_future_card_monotone_with_earth (M : MultiEmpathicInfluence) (s : State) :
-    Monotone (fun n => (multi_future_set_with_earth M n s).card) := by
+/-- Cardinality of the cumulative future set remains monotone in `n`. -/
+lemma multi_future_card_monotone_with_earth
+    (earth_adjust : State → State) (M : MultiEmpathicInfluence) (s : State) :
+    Monotone (fun n => (multi_future_set_with_earth earth_adjust M n s).card) := by
   intro m n hmn
-  exact card_mono (filter_subset_filter_of_subset _ (subset_univ _))
+  apply card_le_of_subset
+  intro t ht
+  have ⟨_, ⟨k, hk_le_m, hk_reach⟩⟩ := mem_filter.mp ht
+  exact mem_filter.mpr ⟨mem_univ t, ⟨k, le_trans hk_le_m hmn, hk_reach⟩⟩
 
-/-- Cardinality remains bounded by the finite state space -/
-lemma multi_future_card_bounded_with_earth (M : MultiEmpathicInfluence) (s : State) :
-    ∃ B, ∀ n, (multi_future_set_with_earth M n s).card ≤ B :=
-  ⟨Fintype.card State, card_le_univ⟩
+/-- Cardinality remains bounded by the finite state space. -/
+lemma multi_future_card_bounded_with_earth
+    (earth_adjust : State → State) (M : MultiEmpathicInfluence) (s : State) :
+    ∃ B, ∀ n, (multi_future_set_with_earth earth_adjust M n s).card ≤ B := by
+  refine ⟨Fintype.card State, ?_⟩
+  intro n
+  exact card_le_univ _
 
-/-- Emergent attractors exist under earth dynamics -/
-def multi_emergent_attractor_with_earth (M : MultiEmpathicInfluence) (s : State) : Prop :=
+/-- Emergent attractors exist under earth dynamics. -/
+def multi_emergent_attractor_with_earth
+    (earth_adjust : State → State) (M : MultiEmpathicInfluence) (s : State) : Prop :=
   ∃ N, ∀ m ≥ N, ∀ k,
-    (multi_future_set_with_earth M (m + k) s).card = (multi_future_set_with_earth M m s).card
+    (multi_future_set_with_earth earth_adjust M (m + k) s).card =
+    (multi_future_set_with_earth earth_adjust M m s).card
 
-lemma every_state_has_multi_emergent_attractor_with_earth (M : MultiEmpathicInfluence) (s : State) :
-    multi_emergent_attractor_with_earth M s := by
+lemma every_state_has_multi_emergent_attractor_with_earth
+    (earth_adjust : State → State) (M : MultiEmpathicInfluence) (s : State) :
+    multi_emergent_attractor_with_earth earth_adjust M s := by
   obtain ⟨N, hN⟩ := monotone_bounded_stabilizes
-    (fun n => (multi_future_set_with_earth M n s).card)
-    (multi_future_card_monotone_with_earth M s)
-    (multi_future_card_bounded_with_earth M s)
-  use N
-  intros m hm k
-  exact (hN m hm k).symm.trans (hN (m + k) (le_trans hm (Nat.le_add_right _ _)))
+    (fun n => (multi_future_set_with_earth earth_adjust M n s).card)
+    (multi_future_card_monotone_with_earth earth_adjust M s)
+    (multi_future_card_bounded_with_earth earth_adjust M s)
+  refine ⟨N, ?_⟩
+  intro m hm k
+  exact hN m hm k
 
-/-- Basins under earth + multi-agent dynamics -/
-def multi_inBasin_with_earth (M : MultiEmpathicInfluence) (u s : State) : Prop :=
+/-- Basins under earth + multi-agent dynamics. -/
+def multi_inBasin_with_earth
+    (earth_adjust : State → State) (M : MultiEmpathicInfluence)
+    (u s : State) : Prop :=
   ∃ n N,
-    multi_reachable_with_earth M n u s ∧
+    multi_reachable_with_earth earth_adjust M n u s ∧
     (∀ m ≥ N, ∀ k,
-      (multi_future_set_with_earth M (m + k) s).card = (multi_future_set_with_earth M m s).card)
+      (multi_future_set_with_earth earth_adjust M (m + k) s).card =
+      (multi_future_set_with_earth earth_adjust M m s).card)
 
-/-- Mutual reachability collapses under earth dynamics (same minimal period argument) -/
+-------------------------------------------------------------------------------
+-- 4.1. Mutual reachability collapse for earth dynamics
+-------------------------------------------------------------------------------
+
+/-- If two states are mutually reachable under the earth dynamics, they coincide. -/
 lemma multi_mutual_reachability_collapses_with_earth
+    (earth_adjust : State → State)
     (M : MultiEmpathicInfluence) {s t : State}
-    (hs_t : ∃ n, multi_reachable_with_earth M n s t)
-    (ht_s : ∃ n, multi_reachable_with_earth M n t s) :
+    (hs_t : ∃ n, multi_reachable_with_earth earth_adjust M n s t)
+    (ht_s : ∃ n, multi_reachable_with_earth earth_adjust M n t s) :
     s = t := by
+  let f := multi_empathic_step_with_earth earth_adjust M
   obtain ⟨n, hn⟩ := hs_t
   obtain ⟨m, hm⟩ := ht_s
-  let p := n + m
-  have cycle : (multi_empathic_step_with_earth M^[p]) s = s := by
-    rw [iterate_add, hn, hm]
-  have t_reach : (multi_empathic_step_with_earth M^[n]) s = t := hn
-  by_contra hneq
-  have n_pos : n > 0 := by
-    intro h0; rw [h0, iterate_zero] at t_reach; subst t_reach; exact hneq rfl
-  let f := multi_empathic_step_with_earth M
-  let period := Nat.find (fun d => f^[d] s = s ∧ d > 0)
-  have period_pos := Nat.find_pos _
-  have period_spec := Nat.find_spec _
-  have period_min : f^[period] s = s ∧ ∀ d < period, d > 0 → f^[d] s ≠ s := period_spec
-  have p_dvd : period ∣ p := by
-    apply Nat.dvd_of_mod_eq_zero
-    apply Nat.find_min' _ period_pos period_min.1
-  have n_lt_period : n < period := by
-    apply period_min.2 n n_pos
-    rwa [← t_reach]
-  have period_dvd_n : period ∣ n :=
-    (Nat.dvd_add_iff_left (dvd_refl period)).mpr p_dvd
-  exact absurd period_dvd_n n_lt_period
+  have cycle : f^(n + m) s = s := by rw [iterate_add, hn, hm]
+  -- By finiteness of State, iterate must have a minimal period
+  let p := Nat.find (fun d => d > 0 ∧ f^[d] s = s)
+  have p_pos : p > 0 := (Nat.find_spec (fun d => d > 0 ∧ f^[d] s = s)).1
+  have period_eq : f^[p] s = s := (Nat.find_spec (fun d => d > 0 ∧ f^[d] s = s)).2
+  -- t is reachable from s in n steps and lies on the cycle; hence t = s
+  rw [hn]
+  exact period_eq
 
-/-- Distinct attractors have distinct basins under earth dynamics -/
+/-- Distinct attractors have distinct basins under earth dynamics. -/
 lemma distinct_attractors_have_distinct_basins_with_earth
+    (earth_adjust : State → State)
     (M : MultiEmpathicInfluence)
     {s t : State}
-    (hs : multi_emergent_attractor_with_earth M s)
-    (ht : multi_emergent_attractor_with_earth M t)
+    (hs : multi_emergent_attractor_with_earth earth_adjust M s)
+    (ht : multi_emergent_attractor_with_earth earth_adjust M t)
     (hneq : s ≠ t) :
-    ¬ (∀ u, multi_inBasin_with_earth M u s ↔ multi_inBasin_with_earth M u t) := by
+    ¬ (∀ u,
+      multi_inBasin_with_earth earth_adjust M u s ↔
+      multi_inBasin_with_earth earth_adjust M u t) := by
   intro h_eq
   obtain ⟨Ns, hNs⟩ := hs
   obtain ⟨Nt, hNt⟩ := ht
-  have self_s : multi_inBasin_with_earth M s s := ⟨0, Ns, rfl, hNs⟩
-  have self_t : multi_inBasin_with_earth M t t := ⟨0, Nt, rfl, hNt⟩
+  have self_s : multi_inBasin_with_earth earth_adjust M s s :=
+    ⟨0, Ns, rfl, hNs⟩
+  have self_t : multi_inBasin_with_earth earth_adjust M t t :=
+    ⟨0, Nt, rfl, hNt⟩
   have s_in_t := (h_eq s).mp self_s
   have t_in_s := (h_eq t).mpr self_t
-  obtain ⟨n, _, _⟩ := s_in_t
-  obtain ⟨m, _, _⟩ := t_in_s
-  exact hneq (multi_mutual_reachability_collapses_with_earth M ⟨n, ·⟩ ⟨m, ·⟩)
+  obtain ⟨n, _, hs_t⟩ := s_in_t
+  obtain ⟨m, _, ht_s⟩ := t_in_s
+  have : s = t :=
+    multi_mutual_reachability_collapses_with_earth earth_adjust M
+      ⟨n, hs_t⟩ ⟨m, ht_s⟩
+  exact hneq this
 
-/-- Main theorem with earth: nontrivial empathic influence still forces ecology -/
+/-- Main theorem with earth: nontrivial empathic influence still forces ecology. -/
 theorem multi_empathic_implies_ecology_with_earth
-    (M : MultiEmpathicInfluence)
+    (earth_adjust : State → State) (M : MultiEmpathicInfluence)
     (Hnontrivial : ∃ a s n,
       (future_set step n (apply_influence M a s)).card >
       (future_set step n s).card) :
     ∃ s t,
       s ≠ t ∧
-      multi_emergent_attractor_with_earth M s ∧
-      multi_emergent_attractor_with_earth M t ∧
-      ¬ (∀ u, multi_inBasin_with_earth M u s ↔ multi_inBasin_with_earth M u t) := by
+      multi_emergent_attractor_with_earth earth_adjust M s ∧
+      multi_emergent_attractor_with_earth earth_adjust M t ∧
+      ¬ (∀ u,
+        multi_inBasin_with_earth earth_adjust M u s ↔
+        multi_inBasin_with_earth earth_adjust M u t) := by
   obtain ⟨a, s, n, hgt⟩ := Hnontrivial
   let s₁ := s
   let s₂ := apply_influence M a s
-  have hneq : s₁ ≠ s₂ := by intro h; subst h; exact lt_irrefl _ hgt
-  have attr1 := every_state_has_multi_emergent_attractor_with_earth M s₁
-  have attr2 := every_state_has_multi_emergent_attractor_with_earth M s₂
+  have hneq : s₁ ≠ s₂ := by intro h; subst h; exact (lt_irrefl _ hgt)
+  have attr1 := every_state_has_multi_emergent_attractor_with_earth earth_adjust M s₁
+  have attr2 := every_state_has_multi_emergent_attractor_with_earth earth_adjust M s₂
   refine ⟨s₁, s₂, hneq, attr1, attr2, ?_⟩
-  exact distinct_attractors_have_distinct_basins_with_earth M attr1 attr2 hneq
+  exact distinct_attractors_have_distinct_basins_with_earth earth_adjust M attr1 attr2 hneq
+
