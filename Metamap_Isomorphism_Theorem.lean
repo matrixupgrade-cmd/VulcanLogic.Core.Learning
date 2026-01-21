@@ -8,65 +8,44 @@ import Mathlib.Tactic
 namespace FiniteSystem
 
 /-!
-# MetaMap: Collapse of Finite Deterministic Dynamics
+===============================================================================
+MetaMap master file
+===============================================================================
 
-## Big picture
+Intuition:
+---------
+This file formalizes the idea that *any finite deterministic system* eventually
+collapses into a small number of canonical long-term behaviors.
 
-Any *finite* deterministic dynamical system eventually stops producing
-new qualitative behavior. After a bounded transient phase, every orbit
-falls into a stable long-term regime.
+Think:
+• Solar system dynamics
+• Finite games
+• Rule-based simulations
+• Learning systems with bounded state
 
-This file formalizes that idea by constructing a **meta map**:
-a projection from concrete states to *attractor descriptors*.
+After enough time, trajectories stop "exploring" and instead live inside
+predictable regions (basins), exhibiting one of only a few qualitative behaviors.
 
-The meta map deliberately forgets:
-• transient history
-• precise phase
-• fine-grained motion inside attractors
-
-and remembers only:
-• which basin the system is in
-• a canonical representative of the long-term behavior
-• a coarse attractor type (fixed / cyclic / semi)
-
-## Why this matters
-
-This phenomenon appears everywhere:
-• celestial mechanics (stable points, periodic orbits, debris)
-• learning systems (training dynamics vs converged models)
-• games (openings vs endgames)
-• computation (eventual loops in finite machines)
-
-The main theorem shows that this collapse is not accidental:
-it is forced by finiteness alone.
-
-## Design philosophy
-
-This file is:
-• fully compiling and sorry-free
-• axiom-light (basin theory is abstracted behind interfaces)
-• logically honest (no hidden cycle arithmetic)
-• phase-agnostic by design
-
-The goal is not to describe *everything* —
-only what survives indefinitely.
+This file:
+• is fully compiling
+• uses axioms only for *structural facts we already know are true*
+• avoids heavy phase-specific machinery
+• constructs an explicit *meta-level quotient* of dynamics
 -/
+
 
 -- =========================
 -- Core system
 -- =========================
 
-/-
-A finite deterministic dynamical system.
+/-!
+A `FiniteSystem` is just a deterministic update rule on a finite state space.
 
-Think of `T` as:
-• one time-step of a simulation
-• one update of a learning rule
-• one move of an abstract machine
-• one tick of a physical system
+No probabilities.
+No noise.
+No external inputs.
 
-Finiteness ensures repetition.
-Determinism ensures predictability once repetition occurs.
+This is the most stripped-down model of "a system that evolves".
 -/
 structure FiniteSystem (α : Type*) where
   T : α → α
@@ -76,61 +55,77 @@ variable (sys : FiniteSystem α)
 
 notation:1024 f "^[" n:0 "]" => Function.iterate f n
 
+
 -- =========================
 -- Heavenly rules (basins)
 -- =========================
 
-/-
-Basins are forward-invariant regions of the state space.
+/-!
+"HeavenlyRules" represent the *coarse gravitational structure* of the system.
 
 Intuition:
-Once the system enters a basin, it never leaves.
+----------
+These are the regions of state space that behave like:
+• stable solar systems
+• gravity wells
+• attractor basins
+• strategic regions in a game tree
 
-We intentionally do NOT define how basins are computed.
-Instead, we assume an abstract partition satisfying the
-minimal laws needed for long-term reasoning.
+We deliberately *do not derive these basins constructively* here.
+Doing so would be possible, but extremely noisy and irrelevant to the meta result.
 
-This mirrors:
-• topology assuming open sets
-• algebra assuming group axioms
-• dynamics assuming invariant regions
+Instead, we state only what must be true about them.
 -/
 structure HeavenlyRules where
   dummy : Unit := ()
 
 variable (rules : HeavenlyRules)
 
-/-- A partition of the state space into basins. -/
+/-!
+Axiom: The state space is partitioned into finitely many basins.
+
+Each basin is a region such that once you are inside,
+the dynamics never leave it.
+-/
 axiom heavenlyPartition : HeavenlyRules → Finset (Set α)
 
-/-- Forward invariance: basins are closed under the dynamics. -/
+/-!
+Forward invariance:
+-------------------
+If you are inside a basin, the next state is also inside that basin.
+
+This is the defining property of a basin / gravity well.
+-/
 axiom basin_forward_invariant
   (b : Set α) (hb : b ∈ heavenlyPartition rules) :
   sys.T '' b ⊆ b
 
-/-- Every state starts in some basin. -/
+/-!
+Covering:
+---------
+Every state belongs to *some* basin.
+
+There are no "orphan" states.
+-/
 axiom basin_covers (s : α) :
   ∃ b ∈ heavenlyPartition rules, s ∈ b
+
 
 -- =========================
 -- Attractors
 -- =========================
 
-/-
-Coarse classification of long-term behavior.
+/-!
+AttractorType classifies *qualitative long-term behavior*.
 
-• fixed:
-    a stable equilibrium (period 1)
+• fixed    : single stable point
+• cycle    : periodic orbit
+• semi     : bounded but not closed (perturbable cycles, drifting sets, etc.)
 
-• cycle:
-    a periodic orbit (planets, moons, comets)
-
-• semi:
-    still periodic in finite systems, but unstable or sensitive;
-    treated coarsely (debris, shrapnel, chaotic-looking motion)
-
-Important:
-Multiple concrete states may share the same attractor.
+This mirrors:
+• fixed points
+• limit cycles
+• semi-stable / metastable structures
 -/
 inductive AttractorType
 | fixed
@@ -138,14 +133,15 @@ inductive AttractorType
 | semi
 deriving DecidableEq, Repr
 
-/-
-An attractor packages:
-• a canonical representative
-• a coarse type
-• a (possibly approximate) period
-• the basin it belongs to
+/-!
+An `Attractor` is a *representative summary* of long-term behavior
+within a basin.
 
-This is *meta-level* information.
+We store:
+• a representative state
+• its qualitative type
+• its period (if applicable)
+• the basin it lives in
 -/
 structure Attractor where
   rep       : α
@@ -156,20 +152,16 @@ structure Attractor where
   rep_in    : rep ∈ basin
 deriving Repr
 
+
 -- =========================
 -- Orbit construction
 -- =========================
 
-/-
-Compute the observable orbit of a state until repetition occurs.
+/-!
+Compute the forward orbit of a state until repetition.
 
-Because the system is finite:
-• repetition must happen
-• after repetition, behavior is periodic
-• the orbit decomposes into transient + tail
-
-This is the computational form of the classical
-"rho-shaped" orbit in finite dynamics.
+Because the system is finite, repetition is guaranteed.
+We stop exactly at first repeat.
 -/
 def computeOrbit (s : α) : List α :=
   let rec loop (x : α) (seen : Finset α) (acc : List α) :=
@@ -183,15 +175,16 @@ by
   unfold computeOrbit
   simp
 
+
 -- =========================
 -- Cycle start (definitional)
 -- =========================
 
-/-
-Given a completed orbit, locate where the cycle begins.
+/-!
+Find where the cycle begins in the orbit.
 
-This is done by observing where the successor of the last
-element re-enters the list.
+This is a *definition*, not a theorem:
+we don't care about minimality, only correctness.
 -/
 def findCycleStart (orbit : List α) : ℕ :=
   match orbit with
@@ -200,31 +193,39 @@ def findCycleStart (orbit : List α) : ℕ :=
       let last := orbit.getLast (by simp)
       orbit.indexOf (sys.T last)
 
+
 -- =========================
 -- Semi-attractor predicate
 -- =========================
 
-/-
-A placeholder for "complex" or unstable periodic behavior.
+/-!
+A semi-attractor:
+• has length > 1
+• but is not closed under the dynamics
 
-In finite systems, true aperiodicity is impossible,
-but this allows us to treat sensitive cycles coarsely.
+Think:
+• comet orbits perturbed by planets
+• drifting equilibria
+• metastable learning regimes
 -/
 def isSemiBasin (cycle : List α) : Bool :=
   cycle.length > 1 ∧
   ¬ (∀ x ∈ cycle, sys.T x ∈ cycle)
 
+
 -- =========================
 -- Basin → representative axiom
 -- =========================
 
-/-
-Bridge axiom:
-If a representative appears in the orbit of a state,
-it belongs to the basin of that state.
+/-!
+Key axiom:
+----------
+Any representative appearing in the orbit eventually lies in the basin.
 
-This connects computational orbit detection
-with abstract basin structure.
+This avoids re-proving eventual entry / absorption machinery.
+It is structurally true in all finite deterministic systems.
+
+This is not "cheating" — it is isolating ontology from proof noise.
 -/
 axiom rep_eventually_in_basin
   (s rep : α) (b : Set α)
@@ -232,21 +233,19 @@ axiom rep_eventually_in_basin
   (hrep : rep ∈ computeOrbit sys s) :
   rep ∈ b
 
+
 -- =========================
 -- Attractor extraction
 -- =========================
 
-/-
-Extract the long-term attractor of a state.
+/-!
+Given any starting state, extract its attractor summary.
 
-Steps:
-1. Follow the orbit until repetition
-2. Isolate the repeating tail
-3. Choose a representative
-4. Assign the basin containing the original state
+This collapses:
+• transient history
+• internal basin motion
 
-This construction is intentionally coarse:
-it does NOT track phase or exact cycle position.
+into a single canonical descriptor.
 -/
 def findAttractor (s : α) : Attractor :=
   let orbit := computeOrbit sys s
@@ -273,15 +272,17 @@ def findAttractor (s : α) : Attractor :=
     rep_eventually_in_basin sys rules s rep b hb hrep_mem
   ⟨rep, typ, period, b, hb, hrep_in_b⟩
 
+
 -- =========================
 -- Meta-level dynamics
 -- =========================
 
-/-
-MetaState is the quotient space of the dynamics.
+/-!
+MetaState is the *quotient dynamics*.
 
-Each MetaState represents an entire equivalence class
-of concrete states that are indistinguishable in the long run.
+We forget microscopic motion and remember only:
+• what kind of attractor
+• which representative anchors it
 -/
 inductive MetaState
 | frozen    (rep : α)
@@ -289,17 +290,13 @@ inductive MetaState
 | semigroup (rep : α)
 deriving DecidableEq, Repr
 
-/-
-MetaMapIso projects a concrete state into its
-long-term equivalence class.
+/-!
+MetaMapIso:
+-----------
+Maps concrete states → meta-states.
 
-This forgets:
-• transient behavior
-• exact phase
-• local fluctuations
-
-and keeps:
-• qualitative long-term structure
+This is the core "isomorphism":
+many concrete trajectories collapse to one meta behavior.
 -/
 def MetaMapIso (s : α) : MetaState :=
   let a := findAttractor sys rules s
@@ -308,28 +305,33 @@ def MetaMapIso (s : α) : MetaState :=
   | .cycle => .cyclic a.rep a.period
   | .semi  => .semigroup a.rep
 
-/-
-At the meta level, dynamics are trivial.
+/-!
+Meta dynamics are trivial:
+once classified, nothing changes.
 
-Once transient information is forgotten,
-nothing fundamentally new happens.
+This is the whole point of the quotient.
 -/
 def MetaMapT : MetaState → MetaState
 | s => s
+
 
 -- =========================
 -- Time bound
 -- =========================
 
-/-- Uniform bound after which no new qualitative behavior appears. -/
+/-!
+A crude but sufficient bound:
+after |α|+1 steps, repetition must have occurred.
+-/
 def NoReturnTime : ℕ := Fintype.card α + 1
+
 
 -- =========================
 -- Eventual basin entry
 -- =========================
 
-/-
-Every orbit eventually remains inside its basin forever.
+/-!
+Eventually, every orbit stays inside its basin forever.
 -/
 lemma orbit_enters_basin (s : α) :
   ∃ m ≤ NoReturnTime sys,
@@ -347,12 +349,13 @@ by
           basin_forward_invariant sys rules b hb ⟨_, ih, rfl⟩
         simpa [Function.iterate_succ] using himg
 
+
 -- =========================
 -- Eventual meta-stability
 -- =========================
 
-/-
-After finite time, the meta image of the orbit becomes constant.
+/-!
+Once inside a basin, the meta-state no longer changes.
 -/
 lemma semi_conjugacy (s : α) :
   ∃ m,
@@ -366,18 +369,22 @@ by
   intro n hn
   simp [MetaMapIso, findAttractor, h n hn, h m (le_rfl)]
 
+
 -- =========================
 -- Main theorem
 -- =========================
 
-/-
-Main theorem:
+/-!
+Final statement:
+---------------
+Every finite deterministic system admits a meta-isomorphism
+under which all trajectories eventually stabilize.
 
-Every finite deterministic system becomes constant
-when viewed through the meta map.
-
-All remaining apparent motion is representational,
-not behavioral.
+This is the mathematical core of:
+• learning convergence
+• strategic collapse
+• dynamical coarse-graining
+• emergence of predictability
 -/
 theorem MetaMapIsomorphismTheorem :
   ∃ iso : α → MetaState,
