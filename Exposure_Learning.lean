@@ -1,3 +1,11 @@
+/-
+  =========================
+  Exposure Learning
+  Author: Sean Timothy
+  Date: 2/3/2026
+  =========================
+-/
+
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Nat.Cast.Basic
 import Mathlib.Data.Finset.Basic
