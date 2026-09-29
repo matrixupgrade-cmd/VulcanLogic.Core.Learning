@@ -13,6 +13,9 @@ Purpose:
   - Mutation sequences / evolving dynamics fully supported
   - Discrete curl computations fully constructive and trackable
   - All proofs complete, no sorry remaining
+
+Furture Addition:   Add definition for Algebric Lightening.
+Algebraic Lightning = the special case where the resolution of that zone produces a large trajectory change relative to the size of the triggering overlap.
 ===============================================================================
 -/
 
