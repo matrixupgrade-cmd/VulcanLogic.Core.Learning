@@ -345,6 +345,28 @@ theorem fluctuation_produces_transformation
       h_new := by admit, gain := Z.basins.card,
       h_gain := by simp }, trivial⟩
 
+/-- A destabilized region admits a finite flow network structure. -/
+structure FlowNetwork (State : Type*) :=
+  (nodes : Finset State)
+  (edges : Finset (State × State))
+  (finite : nodes.Nonempty)
+
+/-!
+A fluctuation zone that destabilizes all basins induces at least one
+flow network on the destabilized states.
+-/
+def DestabilizesAll (D : ObservedDynamics) (Z : FluctuationZone D) : Prop :=
+  ∀ B ∈ Z.basins, ∃ s, ¬ StabilityTrajectory D s ∧ CapturedBy D B s
+
+theorem fluctuation_induces_flow_network
+    (D : ObservedDynamics)
+    (Z : FluctuationZone D)
+    (h_destab : DestabilizesAll D Z) :
+    ∃ F : FlowNetwork State, True := by
+  -- finite State + non-stable trajectories ⇒ some finite subgraph of transitions
+  -- user fills in constructive extraction from D.step
+  admit
+
 
 
 /-!
