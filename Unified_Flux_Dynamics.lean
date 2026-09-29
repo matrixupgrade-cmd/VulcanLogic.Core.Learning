@@ -245,128 +245,167 @@ theorem trackEvolvingCurl_nonzero
   exact h_capture_evol t
 
 
-/-! # Section 7: Basin Transformation Dynamics -/
-
 /-!
-A fluctuation zone is any region where multiple basins overlap in observation.
-This is the precursor to lightning, fusion, or fission events.
+# Section 7: Basin Transformation Dynamics
 -/
-structure FluctuationZone (D : ObservedDynamics) :=
-  (basins : Finset (AgentBasin D))
-  (h_overlap : ∀ {B1 B2 : AgentBasin D},
-      B1 ∈ basins → B2 ∈ basins → B1.val = B2.val → False)
 
-/-!
-MemoryProfile describes which structural invariants of a basin are preserved
-during a transformation event. This is intentionally abstract but finite.
--/
-structure MemoryProfile :=
-  (tags : Finset ℕ)        -- finite invariants
-  (nonempty : tags.Nonempty)
+/-! ## 7.0 Absorption facts -/
 
-/-!
-Algebraic Lightning: a high-gain resolution of a fluctuation zone.
-It produces a new basin whose trajectory displacement is large relative
-to the size of the triggering overlap.
--/
-structure AlgebraicLightning (D : ObservedDynamics) :=
-  (zone : FluctuationZone D)
-  (new_obs : Obs)
-  (h_new : new_obs ∉ zone.basins.image Subtype.val)
-  (gain : ℕ)               -- magnitude of trajectory displacement
-  (h_gain : gain ≥ zone.basins.card)  -- large relative to overlap
+/-- Once the observation equals an attractor value, it stays there. -/
+theorem absorbed_forever (D : ObservedDynamics) (B : AgentBasin D) (s : State) {n : ℕ}
+    (h : D.observe (Nat.iterate D.step n s) = B.val) (k : ℕ) :
+    D.observe (Nat.iterate D.step (n + k) s) = B.val := by
+  induction k with
+  | zero => simpa using h
+  | succ k ih =>
+    have e : Nat.iterate D.step (n + (k + 1)) s = D.step (Nat.iterate D.step (n + k) s) :=
+      Function.iterate_succ_apply' D.step (n + k) s
+    rw [e]
+    exact D.absorbing B.property ih
 
-def LightningBasin (D : ObservedDynamics) (L : AlgebraicLightning D) :
-    AgentBasin D := ⟨L.new_obs, by
-  -- new_obs is declared to be a valid attractor element
-  -- user will add attractor extension rules later
-  admit⟩
+/-- A single trajectory is captured by at most one attractor value. -/
+theorem captured_unique (D : ObservedDynamics) (B₁ B₂ : AgentBasin D) (s : State)
+    (h₁ : CapturedBy D B₁ s) (h₂ : CapturedBy D B₂ s) : B₁.val = B₂.val := by
+  obtain ⟨n₁, -, o₁⟩ := h₁
+  obtain ⟨n₂, -, o₂⟩ := h₂
+  rcases le_total n₁ n₂ with h | h
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+    exact (absorbed_forever D B₁ s o₁ k).symm.trans o₂
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+    exact o₁.symm.trans (absorbed_forever D B₂ s o₂ k)
 
-/-!
-Basin Fusion: two or more basins merge into a single basin while preserving
-a combined memory profile.
--/
-structure BasinFusion (D : ObservedDynamics) :=
-  (zone : FluctuationZone D)
-  (memory : MemoryProfile)
-  (new_obs : Obs)
-  (h_new : new_obs ∉ zone.basins.image Subtype.val)
-  (preserves :
-      ∀ B ∈ zone.basins, memory.tags ⊆ memory.tags)  -- trivial placeholder
-  (convergent :
-      ∀ s, ∃ n, D.observe (Nat.iterate D.step n s) = new_obs)
+/-! ## 7.1 Fluctuation zones -/
 
-/-!
-The resulting fused basin.
--/
-def FusionBasin (D : ObservedDynamics) (F : BasinFusion D) :
-    AgentBasin D := ⟨F.new_obs, by admit⟩
+/-- A finite set of states whose members are collectively captured by at least
+two distinct basins. Overlap is at the level of the state set; a single
+trajectory has at most one landing basin (`captured_unique`). -/
+structure FluctuationZone (D : ObservedDynamics) where
+  states : Finset State
+  basins : Finset (AgentBasin D)
+  two_basins : 2 ≤ basins.card
+  touches : ∀ B ∈ basins, ∃ s ∈ states, CapturedBy D B s
 
-/-!
-Basin Fission: a basin destabilizes and splits into multiple new basins,
-each inheriting a portion of the original memory profile.
--/
-structure BasinFission (D : ObservedDynamics) :=
-  (parent : AgentBasin D)
-  (children : Finset (AgentBasin D))
-  (memory_split : AgentBasin D → MemoryProfile)
-  (h_children_nonempty : children.Nonempty)
-  (h_disjoint :
-      ∀ {B1 B2}, B1 ∈ children → B2 ∈ children → B1 ≠ B2)
-  (divergent :
-      ∀ s, ∃ B ∈ children, ∃ n, D.observe (Nat.iterate D.step n s) = B.val)
+/-- Finite invariants carried by a basin through a transformation. -/
+structure MemoryProfile where
+  tags : Finset ℕ
+  nonempty : tags.Nonempty
 
-/-!
-Fission produces multiple new basins; this returns their set.
--/
-def FissionBasins (D : ObservedDynamics) (F : BasinFission D) :
-    Finset (AgentBasin D) := F.children
+/-! ## 7.2 Resolution -/
 
-/-!
-Fusion or Fission classification: based on whether the finite flow network
-converges to a single cycle or splits into disjoint cycles.
--/
+/-- `D'` resolves `D`: same observation map, attractor set only grows. -/
+structure Resolves (D D' : ObservedDynamics) : Prop where
+  observe_eq : D'.observe = D.observe
+  attractor_mono : D.attractor ⊆ D'.attractor
+
+/-- States whose eventual attractor value under `D` is not reached under `D'`. -/
+noncomputable def displaced (D D' : ObservedDynamics) : Finset State :=
+  Finset.univ.filter fun s =>
+    ∃ o ∈ D.attractor,
+      (∃ n ≥ 1, D.observe (Nat.iterate D.step n s) = o) ∧
+      ¬ ∃ n ≥ 1, D'.observe (Nat.iterate D'.step n s) = o
+
+/-- Algebraic lightning: the resolution displaces at least `amplification`
+times as many states as the zone contains. -/
+structure AlgebraicLightning (D : ObservedDynamics) where
+  zone : FluctuationZone D
+  post : ObservedDynamics
+  res : Resolves D post
+  target : AgentBasin post
+  h_new : target.val ∉ zone.basins.image Subtype.val
+  h_lands : ∃ s ∈ zone.states, CapturedBy post target s
+  amplification : ℕ
+  h_amp : 1 < amplification
+  h_gain : amplification * zone.states.card ≤ (displaced D post).card
+
+/-- Basin fusion: every zone state lands in one new basin; memory of every
+zone basin is contained in the fused profile. -/
+structure BasinFusion (D : ObservedDynamics) where
+  zone : FluctuationZone D
+  post : ObservedDynamics
+  res : Resolves D post
+  memory : AgentBasin D → MemoryProfile
+  fused : MemoryProfile
+  target : AgentBasin post
+  h_new : target.val ∉ zone.basins.image Subtype.val
+  preserves : ∀ B ∈ zone.basins, (memory B).tags ⊆ fused.tags
+  convergent : ∀ s ∈ zone.states, CapturedBy post target s
+
+/-- Basin fission: zone states land in at least two new basins, each used. -/
+structure BasinFission (D : ObservedDynamics) where
+  zone : FluctuationZone D
+  post : ObservedDynamics
+  res : Resolves D post
+  children : Finset (AgentBasin post)
+  two_children : 2 ≤ children.card
+  h_new : ∀ C ∈ children, C.val ∉ zone.basins.image Subtype.val
+  memory_split : AgentBasin post → MemoryProfile
+  covers : ∀ s ∈ zone.states, ∃ C ∈ children, CapturedBy post C s
+  uses : ∀ C ∈ children, ∃ s ∈ zone.states, CapturedBy post C s
+
 inductive BasinTransformation (D : ObservedDynamics)
-  | lightning  : AlgebraicLightning D → BasinTransformation D
-  | fusion     : BasinFusion D → BasinTransformation D
-  | fission    : BasinFission D → BasinTransformation D
+  | lightning : AlgebraicLightning D → BasinTransformation D
+  | fusion    : BasinFusion D → BasinTransformation D
+  | fission   : BasinFission D → BasinTransformation D
 
-/-!
-A fluctuation zone always produces at least one transformation event.
-This is the constructive guarantee.
--/
-theorem fluctuation_produces_transformation
-    (D : ObservedDynamics)
-    (Z : FluctuationZone D) :
-    ∃ T : BasinTransformation D, True := by
-  -- placeholder: user will fill in constructive cases
-  exact ⟨BasinTransformation.lightning
-    { zone := Z, new_obs := Classical.choice (Classical.decEq _),
-      h_new := by admit, gain := Z.basins.card,
-      h_gain := by simp }, trivial⟩
+/-! ## 7.3 Fusion / fission dichotomy -/
 
-/-- A destabilized region admits a finite flow network structure. -/
-structure FlowNetwork (State : Type*) :=
-  (nodes : Finset State)
-  (edges : Finset (State × State))
-  (finite : nodes.Nonempty)
+/-- Basins of `D` that capture at least one state of the zone. -/
+noncomputable def landing (D : ObservedDynamics) (Z : FluctuationZone D) :
+    Finset (AgentBasin D) :=
+  Finset.univ.filter fun C => ∃ s ∈ Z.states, CapturedBy D C s
 
-/-!
-A fluctuation zone that destabilizes all basins induces at least one
-flow network on the destabilized states.
--/
+/-- Zone states land in exactly one basin (fusion shape) or at least two
+(fission shape). Applied to a post-resolution dynamics. -/
+theorem landing_dichotomy (D : ObservedDynamics) (Z : FluctuationZone D)
+    (hne : (landing D Z).Nonempty) :
+    (∃ C, landing D Z = {C}) ∨ 2 ≤ (landing D Z).card := by
+  have hpos : 0 < (landing D Z).card := Finset.card_pos.mpr hne
+  by_cases h : (landing D Z).card = 1
+  · exact Or.inl (Finset.card_eq_one.mp h)
+  · exact Or.inr (by omega)
+
+/-! ## 7.4 Flow network -/
+
+/-- A finite set of states with the transition edges of a dynamics. -/
+structure FlowNetwork (State : Type*) where
+  nodes : Finset State
+  edges : Finset (State × State)
+  nonempty : nodes.Nonempty
+
+/-- The graph of `D.step` restricted to `nodes`. -/
+def stepNetwork (D : ObservedDynamics) (nodes : Finset State) (h : nodes.Nonempty) :
+    FlowNetwork State :=
+  { nodes := nodes
+    edges := nodes.image fun s => (s, D.step s)
+    nonempty := h }
+
 def DestabilizesAll (D : ObservedDynamics) (Z : FluctuationZone D) : Prop :=
   ∀ B ∈ Z.basins, ∃ s, ¬ StabilityTrajectory D s ∧ CapturedBy D B s
 
 theorem fluctuation_induces_flow_network
-    (D : ObservedDynamics)
-    (Z : FluctuationZone D)
+    (D : ObservedDynamics) (Z : FluctuationZone D)
     (h_destab : DestabilizesAll D Z) :
-    ∃ F : FlowNetwork State, True := by
-  -- finite State + non-stable trajectories ⇒ some finite subgraph of transitions
-  -- user fills in constructive extraction from D.step
-  admit
-
+    ∃ F : FlowNetwork State,
+      (∀ s ∈ F.nodes, ¬ StabilityTrajectory D s ∧ ∃ B ∈ Z.basins, CapturedBy D B s) ∧
+      (∀ s ∈ F.nodes, (s, D.step s) ∈ F.edges) := by
+  classical
+  have hpos : 0 < Z.basins.card := by
+    have := Z.two_basins
+    omega
+  obtain ⟨B₀, hB₀⟩ := Finset.card_pos.mp hpos
+  obtain ⟨s₀, hs₀, hcap₀⟩ := h_destab B₀ hB₀
+  let N : Finset State :=
+    Finset.univ.filter fun s =>
+      ¬ StabilityTrajectory D s ∧ ∃ B ∈ Z.basins, CapturedBy D B s
+  have hN : N.Nonempty :=
+    ⟨s₀, by
+      simp only [N, Finset.mem_filter, Finset.mem_univ, true_and]
+      exact ⟨hs₀, B₀, hB₀, hcap₀⟩⟩
+  refine ⟨stepNetwork D N hN, ?_, ?_⟩
+  · intro s hs
+    simpa only [N, stepNetwork, Finset.mem_filter, Finset.mem_univ, true_and] using hs
+  · intro s hs
+    exact Finset.mem_image_of_mem (fun s => (s, D.step s)) hs
 
 
 /-!
