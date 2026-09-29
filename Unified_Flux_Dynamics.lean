@@ -1,12 +1,14 @@
 /-!
 ===============================================================================
-Unified Flux Dynamics v2 — Fully Finite, Executable, Constructive
+Unified Flux Dynamics
 Author: Sean Timothy
-Collaborators: Grok, ChatGPT
+
+"fluctuation around overlapping attractors before resolution"
+
 Date: 2026-01-05
-Status: Fully Proven, Executable, No Sorries, No Admits
+
 Purpose:
-  - General, finite, fully constructive flux calculus for multi-basin dynamics
+  - General, finite, fully constructive fluctuation calculus for multi-basin dynamics
   - NestedEcology + unstable states → guaranteed flux emergence
   - Mutation sequences / evolving dynamics fully supported
   - Discrete curl computations fully constructive and trackable
