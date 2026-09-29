@@ -8,7 +8,7 @@ Author: Sean Timothy
 Date: 2026-01-05
 
 Purpose:
-  - General, finite, fully constructive fluctuation calculus for multi-basin dynamics
+  - General, finite, fully constructive fluctuation framework for overlapping multi-basin dynamics
   - NestedEcology + unstable states → guaranteed flux emergence
   - Mutation sequences / evolving dynamics fully supported
   - Discrete curl computations fully constructive and trackable
